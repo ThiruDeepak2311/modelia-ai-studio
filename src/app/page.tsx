@@ -1,103 +1,225 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React from "react";
+import { useModeliaStore, useActions } from "@/lib/store";
+import { Card, CardContent, Button, PrimaryButton, StyleSelector, Field, Textarea, LoadingOverlay } from "@/components/ui";
+import { UploadArea } from "@/components/features/UploadArea";
+import { GenerationPreview } from "@/components/features/GenerationPreview";
+import { HistoryPanel } from "@/components/features/HistoryPanel";
+import { Header } from "@/components/layout/Header";
+import { cn } from "@/lib/utils";
+import { Sparkles, Zap, History, Settings } from "lucide-react";
+
+export default function ModeliaStudio() {
+  const actions = useActions();
+  const generation = useModeliaStore((state) => state.generation);
+  const form = useModeliaStore((state) => state.form);
+  const preview = useModeliaStore((state) => state.preview);
+  const sidebarOpen = useModeliaStore((state) => state.sidebarOpen);
+  
+  React.useEffect(() => {
+    actions.initializeSession();
+  }, [actions]);
+
+  const handleGenerate = async () => {
+    if (!actions.validateForm()) {
+      return;
+    }
+    await actions.startGeneration();
+  };
+
+  const handleAbort = () => {
+    actions.abortGeneration();
+  };
+
+  const canGenerate = form.prompt.isValid && form.style.isValid && form.image.isValid;
+  const isGenerating = generation.status === "generating";
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-black text-white">
+      {/* Header */}
+      <Header />
+      
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
+          
+          {/* Left Panel - Upload & Controls */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Welcome Message */}
+            <div className="text-center lg:text-left">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+                Modelia AI Studio
+              </h1>
+              <p className="text-white/60">
+                Transform fashion visuals with AI-powered generation
+              </p>
+            </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {/* Upload Area */}
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Sparkles size={20} className="text-purple-400" />
+                Upload Image
+              </h2>
+              <UploadArea />
+            </Card>
+
+            {/* Style & Prompt */}
+            <Card className="p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Zap size={20} className="text-purple-400" />
+                Style & Prompt
+              </h2>
+              
+              <Field label="Style" required>
+                <StyleSelector
+                  value={form.style.value}
+                  onValueChange={actions.setStyle}
+                  error={form.style.isValid ? undefined : "Please select a style"}
+                />
+              </Field>
+              
+              <Field label="Prompt" required error={form.prompt.error}>
+                <Textarea
+                  value={form.prompt.value}
+                  onChange={actions.setPrompt}
+                  placeholder="Describe how you want to transform this image..."
+                  maxLength={500}
+                  rows={4}
+                  error={form.prompt.error}
+                />
+              </Field>
+              
+              {/* Live Summary */}
+              {(preview.currentImage || preview.currentPrompt || preview.currentStyle) && (
+                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                  <h4 className="text-sm font-medium text-white/80 mb-2">Preview Summary</h4>
+                  <div className="space-y-1 text-xs text-white/60">
+                    {preview.currentImage && (
+                      <p>📸 Image: {preview.currentImage.file.name} ({(preview.currentImage.file.size / 1024 / 1024).toFixed(1)}MB)</p>
+                    )}
+                    {preview.currentPrompt && (
+                      <p>✨ Prompt: {preview.currentPrompt.slice(0, 50)}{preview.currentPrompt.length > 50 ? "..." : ""}</p>
+                    )}
+                    <p>🎨 Style: {preview.currentStyle}</p>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Generation Controls */}
+            <Card className="p-6">
+              <div className="space-y-4">
+                {!isGenerating ? (
+                  <PrimaryButton
+                    onClick={handleGenerate}
+                    disabled={!canGenerate}
+                    className="w-full"
+                    size="lg"
+                    aria-label="Generate AI fashion image"
+                  >
+                    <Sparkles size={20} />
+                    Generate
+                  </PrimaryButton>
+                ) : (
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleAbort}
+                      variant="outline"
+                      className="w-full"
+                      size="lg"
+                    >
+                      Cancel Generation
+                    </Button>
+                    
+                    {/* Progress indicator */}
+                    <div className="text-center">
+                      <p className="text-sm text-white/70 mb-2">
+                        {generation.retryCount > 0 
+                          ? `Retrying... (Attempt ${generation.retryCount + 1}/3)`
+                          : "Generating your image..."
+                        }
+                      </p>
+                      <div className="w-full bg-white/10 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${generation.progress}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-white/50 mt-1">{Math.round(generation.progress)}%</p>
+                    </div>
+                  </div>
+                )}
+                
+                {generation.error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-red-400 text-sm font-medium">{generation.error.message}</p>
+                    {generation.canRetry && (
+                      <Button
+                        onClick={actions.retryGeneration}
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                      >
+                        Retry
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Quick Actions */}
+            <div className="flex gap-2">
+              <Button
+                onClick={actions.toggleSidebar}
+                variant="ghost"
+                size="sm"
+                className="flex-1"
+              >
+                <History size={16} />
+                History
+              </Button>
+              <Button
+                onClick={() => actions.openModal("settings")}
+                variant="ghost"
+                size="sm"
+                className="flex-1"
+              >
+                <Settings size={16} />
+                Settings
+              </Button>
+            </div>
+          </div>
+
+          {/* Center Panel - Preview */}
+          <div className="lg:col-span-5">
+            <GenerationPreview />
+          </div>
+
+          {/* Right Panel - History (Collapsible) */}
+          <div className={cn(
+            "lg:col-span-3 transition-all duration-300",
+            !sidebarOpen && "lg:hidden"
+          )}>
+            <HistoryPanel />
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      
+      {/* Loading Overlay for full-screen states */}
+      <LoadingOverlay
+        isVisible={generation.status === "uploading"}
+        message="Processing image..."
+        onCancel={handleAbort}
+      />
+      
+      {/* Background Gradient */}
+      <div className="fixed inset-0 -z-10 opacity-20">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl" />
+      </div>
     </div>
   );
 }
