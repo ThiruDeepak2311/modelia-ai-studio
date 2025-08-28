@@ -26,13 +26,11 @@ export const HistoryPanel: React.FC = () => {
     actions.selectHistoryItem(item);
   };
 
-  const handleDeleteItem = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const handleDeleteItem = (id: string) => {
     actions.removeFromHistory(id);
   };
 
-  const handleToggleFavorite = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const handleToggleFavorite = (id: string) => {
     actions.toggleFavorite(id);
   };
 
@@ -197,41 +195,62 @@ export const HistoryPanel: React.FC = () => {
                   
                   {/* Action buttons (show on hover) */}
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      onClick={() => handleToggleFavorite(item.id)}
-                      variant="secondary"
-                      size="sm"
-                      className="!bg-black/60 hover:!bg-black/80 !backdrop-blur-sm !p-1.5"
-                      aria-label={item.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavorite(item.id);
+                      }}
                     >
-                      <Heart 
-                        size={12} 
-                        className={cn(
-                          "transition-colors",
-                          item.isFavorite ? "text-red-400 fill-current" : "text-white"
-                        )} 
-                      />
-                    </Button>
+                      <Button
+                        onClick={() => {}}
+                        variant="secondary"
+                        size="sm"
+                        className="!bg-black/60 hover:!bg-black/80 !backdrop-blur-sm !p-1.5"
+                        aria-label={item.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Heart 
+                          size={12} 
+                          className={cn(
+                            "transition-colors",
+                            item.isFavorite ? "text-red-400 fill-current" : "text-white"
+                          )} 
+                        />
+                      </Button>
+                    </div>
                     
-                    <Button
-                      onClick={() => handleDownload(item.imageUrl, item.id)}
-                      variant="secondary"
-                      size="sm"
-                      className="!bg-black/60 hover:!bg-black/80 !backdrop-blur-sm !p-1.5"
-                      aria-label="Download image"
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(item.imageUrl, item.id);
+                      }}
                     >
-                      <Download size={12} className="text-white" />
-                    </Button>
+                      <Button
+                        onClick={() => {}}
+                        variant="secondary"
+                        size="sm"
+                        className="!bg-black/60 hover:!bg-black/80 !backdrop-blur-sm !p-1.5"
+                        aria-label="Download image"
+                      >
+                        <Download size={12} className="text-white" />
+                      </Button>
+                    </div>
                     
-                    <Button
-                      onClick={() => handleDeleteItem(item.id)}
-                      variant="secondary"
-                      size="sm"
-                      className="!bg-red-600/60 hover:!bg-red-600/80 !backdrop-blur-sm !p-1.5"
-                      aria-label="Delete from history"
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteItem(item.id);
+                      }}
                     >
-                      <X size={12} className="text-white" />
-                    </Button>
+                      <Button
+                        onClick={() => {}}
+                        variant="secondary"
+                        size="sm"
+                        className="!bg-red-600/60 hover:!bg-red-600/80 !backdrop-blur-sm !p-1.5"
+                        aria-label="Delete from history"
+                      >
+                        <X size={12} className="text-white" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
