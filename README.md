@@ -2,7 +2,7 @@
 
 A React-based AI fashion studio that simulates transforming fashion images using AI generation with different style options. Built as a technical assignment demonstrating senior front-end engineering skills.
 
-![Modelia AI Studio](./evidence/app-screenshot.png)
+
 
 ## 🚀 Quick Start
 
